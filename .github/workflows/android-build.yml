@@ -77,6 +77,9 @@ jobs:
       - name: Set up Android SDK
         if: steps.cache.outputs.cache-hit != 'true'
         uses: android-actions/setup-android@v3
+        with:
+          # the action's default also asks for the removed "tools" package
+          packages: platform-tools
 
       - name: Set up Rust
         if: steps.cache.outputs.cache-hit != 'true'
