@@ -48,7 +48,26 @@ val LRCLIB_BUILT_IN_PLUGIN = PluginEntry(
     bugs = "",
     license = "",
 )
+// BeatViz: Spotify metadata, compiled in (see :spotify_builtin). Android only;
+// other platforms have no implementation and never select it by default.
+val SPOTIFY_BUILT_IN_PLUGIN = PluginEntry(
+    name = "Spotify",
+    version = "0.1.0",
+    apiVersion = PLUGIN_API_VERSION,
+    description = "Spotify metadata (built in, based on sonic-liberation/spotube-plugin-spotify).",
+    author = "BeatViz",
+    capabilities = listOf(
+        PluginCapability.NETWORK_REQUESTS,
+        PluginCapability.PERSISTENT_STORAGE,
+        PluginCapability.WEBVIEW,
+    ),
+    abilities = listOf(PluginAbility.METADATA),
+    contact = "",
+    repository = "https://github.com/sonic-liberation/spotube-plugin-spotify",
+    bugs = "",
+    license = "AGPL-3.0-or-later",
+)
 val BUILT_IN_PLUGINS = listOf(
     NEWPIPE_YOUTUBE_BUILT_IN_PLUGIN,
     LRCLIB_BUILT_IN_PLUGIN,
-)
+) + platformBuiltInPlugins()

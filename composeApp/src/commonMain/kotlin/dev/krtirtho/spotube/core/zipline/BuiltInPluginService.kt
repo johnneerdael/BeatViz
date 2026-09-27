@@ -26,6 +26,7 @@ import dev.krtirtho.spotube.core.zipline.plugin_apis.lrclib.RealLRCLibLyricsAPI
 import dev.krtirtho.spotube.core.zipline.plugin_apis.newpipe_yt.RealNewPipeAudioAPI
 import dev.krtirtho.spotube.modules.plugin.LRCLIB_BUILT_IN_PLUGIN
 import dev.krtirtho.spotube.modules.plugin.NEWPIPE_YOUTUBE_BUILT_IN_PLUGIN
+import dev.krtirtho.spotube.modules.plugin.platformBuiltInPluginServices
 import dev.krtirtho.spotube.modules.plugin.PluginEntry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -70,6 +71,9 @@ class BuiltInPluginService(
                 servicesRegistry[CoreAPI::class] = RealCoreAPI()
                 servicesRegistry[LyricsAPI::class] = RealLRCLibLyricsAPI()
             }
+
+            // BeatViz: platform-specific built-ins (Spotify on Android)
+            else -> platformBuiltInPluginServices(pluginInfo, scope)?.let(servicesRegistry::putAll)
         }
         runLogInFlowObservers()
     }

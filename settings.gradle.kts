@@ -56,3 +56,5 @@ plugins {
 include(":composeApp")
 include(":plugin_interfaces")
 include(":js_plugin_example")
+// BeatViz: vendored Spotify plugin compiled in as a built-in plugin (Android TV)
+include(":spotify_builtin")

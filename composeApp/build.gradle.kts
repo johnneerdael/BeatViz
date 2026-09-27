@@ -252,6 +252,8 @@ kotlin {
                 implementation(libs.media3.common)
                 implementation(libs.media3.exoplayer)
                 implementation(libs.media3.session)
+                // BeatViz: Spotify metadata plugin, built in
+                implementation(project(":spotify_builtin"))
             }
         }
         val iosMain by creating {

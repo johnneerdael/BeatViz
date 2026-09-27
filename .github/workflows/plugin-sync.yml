@@ -1,0 +1,141 @@
+name: Spotify Plugin Sync
+
+# Pulls sonic-liberation/spotube-plugin-spotify (main) into the vendored copy at
+# plugins/spotube-plugin-spotify whenever the subtree merge is clean AND the
+# Android build still passes. Upstream plugin fixes (e.g. refreshed Spotify
+# query hashes) matter: without them the home feed and library stop loading.
+#   - Clean merge + green build  -> master is fast-forwarded to the merge.
+#   - Merge conflict             -> an issue lists the conflicting files.
+#   - Clean merge + red build    -> the merge is left on `plugin-sync` and an
+#                                   issue links the failed run.
+
+on:
+  schedule:
+    - cron: "47 4 * * *" # daily, 04:47 UTC (after upstream-sync)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: plugin-sync
+  cancel-in-progress: false
+
+env:
+  PLUGIN_REPO: https://github.com/sonic-liberation/spotube-plugin-spotify
+  PLUGIN_BRANCH: main
+  PREFIX: plugins/spotube-plugin-spotify
+  SYNC_BRANCH: plugin-sync
+
+jobs:
+  merge:
+    name: Pull plugin changes
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.merge.outputs.status }}
+      sha: ${{ steps.merge.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Subtree pull
+        id: merge
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --no-tags "$PLUGIN_REPO" "$PLUGIN_BRANCH"
+          upstream=$(git rev-parse FETCH_HEAD)
+
+          if git merge-base --is-ancestor "$upstream" HEAD; then
+            echo "Plugin already up to date ($upstream)"
+            echo "status=up-to-date" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if git subtree pull --prefix="$PREFIX" "$PLUGIN_REPO" "$PLUGIN_BRANCH" \
+               -m "Merge spotube-plugin-spotify $PLUGIN_BRANCH (${upstream:0:7})"; then
+            git push --force origin "HEAD:refs/heads/$SYNC_BRANCH"
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            echo "status=merged" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          conflicts=$(git diff --name-only --diff-filter=U)
+          git merge --abort || true
+          echo "status=conflict" >> "$GITHUB_OUTPUT"
+
+          body=$(printf '%s\n' \
+            "Pulling \`spotube-plugin-spotify\` ${upstream:0:7} into \`$PREFIX\` conflicts with our changes in:" \
+            "" \
+            "$(echo "$conflicts" | sed 's/^/- `/; s/$/`/')" \
+            "" \
+            "Resolve locally: \`git subtree pull --prefix=$PREFIX $PLUGIN_REPO $PLUGIN_BRANCH\`, then push to master." \
+            "" \
+            "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")
+          gh label create plugin-sync --color 1ED760 --force >/dev/null
+          existing=$(gh issue list --label plugin-sync --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --label plugin-sync --title "Spotify plugin sync needs a manual merge" --body "$body"
+          fi
+
+  build:
+    name: Build merged tree
+    needs: merge
+    if: needs.merge.outputs.status == 'merged'
+    uses: ./.github/workflows/android-build.yml
+    with:
+      ref: ${{ needs.merge.outputs.sha }}
+
+  promote:
+    name: Fast-forward master
+    needs: [merge, build]
+    if: needs.merge.outputs.status == 'merged' && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.merge.outputs.sha }}
+          fetch-depth: 0
+
+      - name: Push merge to master
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git push origin "${{ needs.merge.outputs.sha }}:refs/heads/master"
+          git push origin --delete "$SYNC_BRANCH" || true
+          existing=$(gh issue list --label plugin-sync --state open --json number --jq '.[0].number' 2>/dev/null || true)
+          if [ -n "$existing" ]; then
+            gh issue close "$existing" --comment "Plugin merged cleanly and the build passed: ${{ needs.merge.outputs.sha }}"
+          fi
+
+  report-build-failure:
+    name: Report failed build
+    needs: [merge, build]
+    if: always() && needs.merge.outputs.status == 'merged' && needs.build.result == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open or update issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          body=$(printf '%s\n' \
+            "The Spotify plugin update merges cleanly, but the Android build fails, so \`master\` was not updated." \
+            "" \
+            "The merge is on branch \`$SYNC_BRANCH\` (${{ needs.merge.outputs.sha }}). Fix it there, then fast-forward master." \
+            "" \
+            "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")
+          gh label create plugin-sync --color 1ED760 --force >/dev/null
+          existing=$(gh issue list --label plugin-sync --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --label plugin-sync --title "Spotify plugin sync: merged code does not build" --body "$body"
+          fi

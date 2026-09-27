@@ -117,7 +117,7 @@ class PluginManager(
             val defaultSelectedPlugins = mapOf(
                 PluginAbility.AUDIO to NEWPIPE_YOUTUBE_BUILT_IN_PLUGIN,
                 PluginAbility.SCROBBLE to LRCLIB_BUILT_IN_PLUGIN,
-            )
+            ) + platformDefaultSelectedPlugins()
             if (json == null) {
                 PluginManagerStates.Data(
                     plugins = BUILT_IN_PLUGINS,
@@ -138,9 +138,8 @@ class PluginManager(
 
                     res.copy(
                         plugins = (plugins union BUILT_IN_PLUGINS).toList(),
-                        selectedPlugins = res.selectedPlugins.ifEmpty {
-                            defaultSelectedPlugins
-                        }
+                        // BeatViz: fill abilities the user never chose (e.g. metadata -> Spotify).
+                        selectedPlugins = defaultSelectedPlugins + res.selectedPlugins
                     )
                 } catch (_: Exception) {
                     PluginManagerStates.Data(
