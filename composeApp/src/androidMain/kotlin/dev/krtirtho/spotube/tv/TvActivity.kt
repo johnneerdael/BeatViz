@@ -26,6 +26,7 @@ import dev.krtirtho.spotube.core.deeplink.ExternalUriHandler
 import dev.krtirtho.spotube.core.newpipe.NewPipeDownloader
 import dev.krtirtho.spotube.core.paths.Paths
 import dev.krtirtho.spotube.media.PlaybackService
+import dev.krtirtho.spotube.tv.phone.PhoneKeyboardService
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.dialogs.init
 
@@ -45,6 +46,9 @@ class TvActivity : ComponentActivity() {
         } else {
             startService(serviceIntent)
         }
+
+        // Phone keyboard server comes back up if it was left on.
+        PhoneKeyboardService.get(this).start()
 
         intent?.dataString?.let(ExternalUriHandler::onNewUri)
         setContent {

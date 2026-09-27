@@ -254,6 +254,8 @@ kotlin {
                 implementation(libs.media3.session)
                 // BeatViz: Spotify metadata plugin, built in
                 implementation(project(":spotify_builtin"))
+                // BeatViz: QR code for pairing the phone keyboard
+                implementation("com.google.zxing:core:3.5.3")
             }
         }
         val iosMain by creating {

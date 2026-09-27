@@ -63,6 +63,8 @@ import dev.krtirtho.spotube.core.audioplayer.QueueEntry
 import dev.krtirtho.spotube.modules.home.HomeScreenState
 import dev.krtirtho.spotube.modules.home.HomeScreenViewModel
 import dev.krtirtho.spotube.modules.search.SearchScreenViewModel
+import dev.krtirtho.spotube.tv.phone.PhoneField
+import dev.krtirtho.spotube.tv.phone.PhoneFieldBinding
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -258,6 +260,14 @@ private fun TvSearchField(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val focused by interactionSource.collectIsFocusedAsState()
+    // With the phone keyboard on, the search box is mirrored on the phone while focused.
+    PhoneFieldBinding(
+        active = focused,
+        field = PhoneField(label = "Search", hint = "What do you want to play?", action = "search"),
+        value = query,
+        onText = onQueryChange,
+        onSubmit = onSearch,
+    )
     Row(
         modifier = modifier
             .fillMaxWidth()

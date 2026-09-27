@@ -32,6 +32,9 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.krtirtho.spotube.core.navigation.NavigationCommands
 import dev.krtirtho.spotube.core.navigation.Routes
+import dev.krtirtho.spotube.core.webview.WebViewController
+import dev.krtirtho.spotube.tv.phone.PhoneAnyFieldBridge
+import dev.krtirtho.spotube.tv.phone.PhoneWebViewBridge
 import dev.krtirtho.spotube.core.ui.base.LocalBaseUITheme
 import dev.krtirtho.spotube.core.ui.base.rememberBaseUITheme
 import dev.krtirtho.spotube.core.ui.theming.SpotubeTheme
@@ -92,8 +95,12 @@ fun TvApp() {
                 }
 
                 if (isWebViewOpen) {
-                    WebViewScreen(koinInject())
+                    val webViewController: WebViewController = koinInject()
+                    WebViewScreen(webViewController)
+                    PhoneWebViewBridge(webViewController)
                 }
+                // Any other focused text field can be typed from the phone too.
+                PhoneAnyFieldBridge(enabled = !isWebViewOpen)
             }
         }
     }

@@ -25,6 +25,17 @@ Our changes to the plugin (keep them small; they must survive `git subtree pull`
 - `HomeShortsSectionData` (the untitled shortcuts grid at the top of Home) is returned as a section with `description = SHORTCUTS_MARKER`.
 - `genres()` returns `All` + the web player's Home chips (`home-genre:<chip id>`, passed to the `home` query as `facet`) + browse categories (`spotify:page:…`). The TV shows chips on Home and categories on Search.
 
+## Phone keyboard
+
+Ported from BeatVisualizer (same encrypted protocol and phone page, `composeApp/src/androidMain/assets/phone-keyboard/`). Top bar › phone icon › Turn on, scan the QR code once. The TV runs a small LAN web server (port 47320, or a free one); the phone page and TV talk AES-256-GCM with a key that only travels in the QR code's URL fragment.
+
+What the phone types into:
+- **Search** — bound directly (label, current text, edits both ways).
+- **Web pages** (Spotify sign-in, plugin pages) — the input selected on the TV; the page is asked for its label and whether it's a password.
+- **Any other text field** — typed as key events into whichever field accepts text.
+
+Code: `tv/phone/` (`PhoneChannel`, `PhoneInputServer`, `PhoneKeyboardService`, `PhoneFieldBridges`) and `TvPhoneKeyboardScreen.kt`. The pairing secret is kept in app-private preferences.
+
 ## Syncs (daily, from `master`)
 
 - **upstream-sync.yml** — merges `KRTirtho/spotube` `dev` into `master`.

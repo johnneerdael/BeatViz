@@ -46,6 +46,7 @@ import dev.krtirtho.spotube.resources.iconsax.IconsaxCd
 import dev.krtirtho.spotube.resources.iconsax.IconsaxHeart
 import dev.krtirtho.spotube.resources.iconsax.IconsaxHeart2
 import dev.krtirtho.spotube.resources.iconsax.IconsaxHome
+import dev.krtirtho.spotube.resources.iconsax.IconsaxMirroringScreen
 import dev.krtirtho.spotube.resources.iconsax.IconsaxMusic
 import dev.krtirtho.spotube.resources.iconsax.IconsaxNext
 import dev.krtirtho.spotube.resources.iconsax.IconsaxPause
@@ -80,6 +81,7 @@ object TvIcons {
     val Artist: ImageVector get() = Iconsax.User
     val FullScreen: ImageVector get() = Iconsax.FluentMaximize
     val Down: ImageVector get() = Iconsax.IconsaxArrowDown4
+    val Phone: ImageVector get() = Iconsax.IconsaxMirroringScreen
 }
 
 /** Picks a thumbnail that is sharp at [targetPx] without downloading the largest one. */

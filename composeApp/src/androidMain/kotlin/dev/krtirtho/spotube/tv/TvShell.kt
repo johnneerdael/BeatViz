@@ -115,6 +115,7 @@ private fun TvScreen(route: TvRoute, navigator: TvNavigator) {
         is TvRoute.Genre -> TvGenreScreen(route = route, navigator = navigator)
         TvRoute.Settings -> SettingsScreen(settingsViewModel = koinViewModel())
         TvRoute.Plugins -> PluginScreen(viewModel = koinViewModel())
+        TvRoute.PhoneKeyboard -> TvPhoneKeyboardScreen()
     }
 }
 
@@ -151,6 +152,12 @@ private fun TvTopBar(navigator: TvNavigator) {
             Text("What do you want to play?", color = TvColors.TextSecondary, fontSize = TvType.Body)
         }
         Spacer(Modifier.weight(1f))
+        TvIconButton(
+            icon = TvIcons.Phone,
+            contentDescription = "Phone keyboard",
+            tint = if (navigator.current == TvRoute.PhoneKeyboard) TvColors.TextPrimary else TvColors.TextSecondary,
+            onClick = { navigator.navigate(TvRoute.PhoneKeyboard) },
+        )
         TvIconButton(
             icon = TvIcons.Settings,
             contentDescription = "Settings",

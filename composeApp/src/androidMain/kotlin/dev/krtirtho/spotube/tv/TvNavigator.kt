@@ -31,6 +31,7 @@ sealed interface TvRoute {
     data object LikedSongs : TvRoute
     data object Settings : TvRoute
     data object Plugins : TvRoute
+    data object PhoneKeyboard : TvRoute
     data class Playlist(val id: String) : TvRoute
     data class Album(val id: String) : TvRoute
     data class Artist(val id: String) : TvRoute

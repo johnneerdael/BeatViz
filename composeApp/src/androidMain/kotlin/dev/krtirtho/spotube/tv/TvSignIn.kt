@@ -43,7 +43,7 @@ import androidx.compose.foundation.layout.size
  * Spotify's own login page in a WebView; the plugin keeps the session after that.
  */
 @Composable
-fun TvSignIn(onSignIn: () -> Unit) {
+fun TvSignIn(onSignIn: () -> Unit, onPhoneKeyboard: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
             modifier = Modifier.widthIn(max = 560.dp),
@@ -72,11 +72,14 @@ fun TvSignIn(onSignIn: () -> Unit) {
                 fontSize = 16.sp,
                 textAlign = TextAlign.Center,
             )
-            TvPillButtonFocusable(text = "Sign in", onClick = onSignIn)
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TvPillButtonFocusable(text = "Sign in", onClick = onSignIn)
+                TvPillButton(text = "Type with your phone", primary = false, onClick = onPhoneKeyboard)
+            }
             Row(modifier = Modifier.padding(top = 8.dp)) {
                 Text(
-                    "Tip: sign in with email and password. Google, Facebook and Apple buttons " +
-                        "often don't work inside a TV web view.",
+                    "Tip: sign in with email and password; turn on the phone keyboard to type them " +
+                        "from your phone. Google, Facebook and Apple buttons often don't work in a TV web view.",
                     color = TvColors.TextMuted,
                     fontSize = TvType.Small,
                     textAlign = TextAlign.Center,

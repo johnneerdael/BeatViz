@@ -98,9 +98,10 @@ fun TvHomeScreen(
             return
         }
         !loggedIn -> {
-            TvSignIn(onSignIn = {
-                pluginManager.launchTask { plugin?.use { coreAPI.login() } }
-            })
+            TvSignIn(
+                onSignIn = { pluginManager.launchTask { plugin?.use { coreAPI.login() } } },
+                onPhoneKeyboard = { navigator.navigate(TvRoute.PhoneKeyboard) },
+            )
             return
         }
     }
