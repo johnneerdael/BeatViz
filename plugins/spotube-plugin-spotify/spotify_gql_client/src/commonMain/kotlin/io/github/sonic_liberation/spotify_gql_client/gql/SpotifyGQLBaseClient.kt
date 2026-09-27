@@ -96,6 +96,7 @@ abstract class SpotifyGQLBaseClient(protected val client: HttpClientAPI) {
                 }
                 polymorphic(HomeSectionDataUnion::class) {
                     subclass(HomeGenericSectionData::class)
+                    subclass(HomeShortsSectionData::class) // BeatViz: top-of-home shortcuts
                     subclass(HomeRecentlyPlayedSectionData::class)
                     subclass(HomeRecsItemData::class)
                 }

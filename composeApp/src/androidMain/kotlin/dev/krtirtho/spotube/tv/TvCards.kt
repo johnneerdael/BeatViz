@@ -19,7 +19,9 @@ package dev.krtirtho.spotube.tv
 
 import android.graphics.Bitmap
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,6 +34,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,13 +64,23 @@ import kotlinx.coroutines.withContext
 fun TvCard(
     item: TvItem,
     modifier: Modifier = Modifier,
+    focusKey: String? = null,
+    initialFocus: Boolean = false,
     onClick: () -> Unit,
 ) {
+    val actions = LocalTvActions.current
     Column(
         modifier = modifier
             .width(TvDimens.CardWidth)
             .clip(TvCardShape)
-            .tvFocusable(focusedScale = 1.04f, focusedBackground = TvColors.PanelRaised, onClick = onClick)
+            .tvFocusable(
+                focusedScale = 1.04f,
+                focusedBackground = TvColors.PanelRaised,
+                focusKey = focusKey ?: item.key,
+                initialFocus = initialFocus,
+                onLongClick = { actions.show(item) },
+                onClick = onClick,
+            )
             .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -97,7 +110,7 @@ fun TvCard(
 }
 
 /** A titled, horizontally scrolling row of cards (one home-feed section). */
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun TvCardRow(
     title: String,
@@ -105,6 +118,8 @@ fun TvCardRow(
     modifier: Modifier = Modifier,
     description: String? = null,
     onShowAll: (() -> Unit)? = null,
+    rowKey: String = title,
+    initialFocus: Boolean = false,
     onItemClick: (index: Int, item: TvItem) -> Unit,
 ) {
     if (items.isEmpty()) return
@@ -115,13 +130,20 @@ fun TvCardRow(
             onShowAll = onShowAll,
             modifier = Modifier.padding(horizontal = TvDimens.ContentPadding),
         )
-        LazyRow(
-            // Coming back to a row puts focus on the card you left, not the first one.
-            modifier = Modifier.focusRestorer(),
-            contentPadding = PaddingValues(horizontal = TvDimens.ContentPadding - 8.dp),
-        ) {
-            itemsIndexed(items, key = { index, item -> "${item.key}#$index" }) { index, item ->
-                TvCard(item = item, onClick = { onItemClick(index, item) })
+        CompositionLocalProvider(LocalBringIntoViewSpec provides rememberRowPivotSpec(TvDimens.ContentPadding)) {
+            LazyRow(
+                // Coming back to a row puts focus on the card you left, not the first one.
+                modifier = Modifier.focusRestorer(),
+                contentPadding = PaddingValues(horizontal = TvDimens.ContentPadding - 8.dp),
+            ) {
+                itemsIndexed(items, key = { index, item -> "${item.key}#$index" }) { index, item ->
+                    TvCard(
+                        item = item,
+                        focusKey = "$rowKey/${item.key}#$index",
+                        initialFocus = initialFocus && index == 0,
+                        onClick = { onItemClick(index, item) },
+                    )
+                }
             }
         }
     }
@@ -132,14 +154,22 @@ fun TvCardRow(
 fun TvShortcutTile(
     item: TvItem,
     modifier: Modifier = Modifier,
+    initialFocus: Boolean = false,
     onClick: () -> Unit,
 ) {
+    val actions = LocalTvActions.current
     Row(
         modifier = modifier
             .height(56.dp)
             .clip(TvCardShape)
             .background(Color.White.copy(alpha = 0.08f), TvCardShape)
-            .tvFocusable(focusedBackground = Color.White.copy(alpha = 0.2f), onClick = onClick),
+            .tvFocusable(
+                focusedBackground = Color.White.copy(alpha = 0.2f),
+                focusKey = "shortcut/${item.key}",
+                initialFocus = initialFocus,
+                onLongClick = { actions.show(item) },
+                onClick = onClick,
+            ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

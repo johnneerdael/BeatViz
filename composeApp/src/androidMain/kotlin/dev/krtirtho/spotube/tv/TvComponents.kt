@@ -38,10 +38,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
@@ -53,8 +61,11 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Makes an element reachable with the D-pad: a white outline (and optional
- * background/scale) while focused. OK/Enter activates [onClick]; holding OK
- * activates [onLongClick].
+ * background/scale) while focused. OK/Enter activates [onClick]; holding OK or
+ * pressing the remote's Menu key activates [onLongClick].
+ *
+ * [focusKey] lets the screen remember this element, so Back restores focus to
+ * it; [initialFocus] marks the element a screen focuses when first opened.
  */
 @OptIn(ExperimentalFoundationApi::class)
 fun Modifier.tvFocusable(
@@ -62,6 +73,8 @@ fun Modifier.tvFocusable(
     focusedScale: Float = 1f,
     focusedBackground: Color? = null,
     showBorder: Boolean = true,
+    focusKey: String? = null,
+    initialFocus: Boolean = false,
     onFocusChanged: ((Boolean) -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
     onClick: (() -> Unit)?,
@@ -69,7 +82,25 @@ fun Modifier.tvFocusable(
     val interactionSource = remember { MutableInteractionSource() }
     val focused by interactionSource.collectIsFocusedAsState()
     val scale by animateFloatAsState(if (focused) focusedScale else 1f, label = "tvFocusScale")
-    LaunchedEffect(focused) { onFocusChanged?.invoke(focused) }
+    val focusScope = LocalTvFocusScope.current
+    val focusRequester = remember { FocusRequester() }
+    val memoryKey = focusKey ?: if (initialFocus) "initial" else null
+
+    LaunchedEffect(focused) {
+        onFocusChanged?.invoke(focused)
+        if (focused && focusScope != null && memoryKey != null) {
+            focusScope.memory.record(focusScope.screen, memoryKey)
+        }
+    }
+    LaunchedEffect(focusScope?.screen, memoryKey) {
+        if (focusScope != null && memoryKey != null &&
+            focusScope.memory.claim(focusScope.screen, memoryKey, initialFocus)
+        ) {
+            // Let the first frame lay out before moving focus into it.
+            withFrameNanos { }
+            runCatching { focusRequester.requestFocus() }
+        }
+    }
 
     val base = this
         .graphicsLayer {
@@ -86,6 +117,21 @@ fun Modifier.tvFocusable(
         .then(
             if (focused && showBorder) {
                 Modifier.border(TvDimens.FocusBorder, TvColors.Focus, shape)
+            } else {
+                Modifier
+            }
+        )
+        .focusRequester(focusRequester)
+        .then(
+            if (onLongClick != null) {
+                Modifier.onKeyEvent { event ->
+                    if (event.key == Key.Menu && event.type == KeyEventType.KeyUp) {
+                        onLongClick()
+                        true
+                    } else {
+                        false
+                    }
+                }
             } else {
                 Modifier
             }
@@ -165,6 +211,7 @@ fun TvPlayButton(
     isPlaying: Boolean,
     modifier: Modifier = Modifier,
     size: Dp = 56.dp,
+    initialFocus: Boolean = false,
     onClick: () -> Unit,
 ) {
     Box(
@@ -172,7 +219,13 @@ fun TvPlayButton(
             .size(size)
             .clip(CircleShape)
             .background(TvColors.Accent, CircleShape)
-            .tvFocusable(shape = CircleShape, focusedScale = 1.1f, onClick = onClick),
+            .tvFocusable(
+                shape = CircleShape,
+                focusedScale = 1.1f,
+                focusKey = "play",
+                initialFocus = initialFocus,
+                onClick = onClick,
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Icon(

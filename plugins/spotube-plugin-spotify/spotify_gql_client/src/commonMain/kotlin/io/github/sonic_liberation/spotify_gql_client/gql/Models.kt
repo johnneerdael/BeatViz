@@ -798,7 +798,15 @@ data class HomeResponsePayload(
     override val __typename: String = "HomeResponsePayload",
     val greeting: Greeting? = null,
     val sectionContainer: SectionContainer? = null,
+    // BeatViz: the web player's filter chips ("Music", "Podcasts", ...); the id is the `facet`.
+    val homeChips: List<HomeChip> = emptyList(),
 ) : ContentItem
+
+@Serializable
+data class HomeChip(
+    val id: String,
+    val label: Label? = null,
+)
 
 @Serializable
 data class Greeting(

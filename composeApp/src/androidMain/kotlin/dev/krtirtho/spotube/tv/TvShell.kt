@@ -17,7 +17,9 @@
 
 package dev.krtirtho.spotube.tv
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +46,7 @@ import dev.krtirtho.spotube.modules.settings.SettingsScreen
 import dev.krtirtho.spotube.modules.shell.LocalAppShellBottomInset
 import org.koin.compose.viewmodel.koinViewModel
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TvShell(navigator: TvNavigator) {
     Column(
@@ -72,7 +76,10 @@ fun TvShell(navigator: TvNavigator) {
                     .background(TvColors.Panel),
             ) {
                 // Stock screens reserve room for their own player; ours sits outside the panel.
-                CompositionLocalProvider(LocalAppShellBottomInset provides 0.dp) {
+                CompositionLocalProvider(
+                    LocalAppShellBottomInset provides 0.dp,
+                    LocalBringIntoViewSpec provides rememberVerticalPivotSpec(),
+                ) {
                     TvMainContent(navigator = navigator)
                 }
             }
@@ -81,9 +88,23 @@ fun TvShell(navigator: TvNavigator) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TvMainContent(navigator: TvNavigator) {
-    when (val route = navigator.current) {
+    // Each screen keeps its scroll position (and focus, via TvFocusMemory) while
+    // it sits in the back stack, so Back lands exactly where you left.
+    val saveableStateHolder = rememberSaveableStateHolder()
+    val screenKey = navigator.currentScreenKey
+    saveableStateHolder.SaveableStateProvider(screenKey) {
+        CompositionLocalProvider(LocalTvFocusScope provides TvFocusScope(screenKey, navigator.focusMemory)) {
+            TvScreen(route = navigator.current, navigator = navigator)
+        }
+    }
+}
+
+@Composable
+private fun TvScreen(route: TvRoute, navigator: TvNavigator) {
+    when (route) {
         TvRoute.Home -> TvHomeScreen(navigator = navigator)
         TvRoute.Search -> TvSearchScreen(navigator = navigator)
         TvRoute.LikedSongs -> TvLikedSongsScreen(navigator = navigator)
@@ -91,6 +112,7 @@ private fun TvMainContent(navigator: TvNavigator) {
         is TvRoute.Album -> TvAlbumScreen(albumId = route.id, navigator = navigator)
         is TvRoute.Artist -> TvArtistScreen(artistId = route.id, navigator = navigator)
         is TvRoute.BrowseSection -> TvBrowseSectionScreen(route = route, navigator = navigator)
+        is TvRoute.Genre -> TvGenreScreen(route = route, navigator = navigator)
         TvRoute.Settings -> SettingsScreen(settingsViewModel = koinViewModel())
         TvRoute.Plugins -> PluginScreen(viewModel = koinViewModel())
     }

@@ -40,6 +40,7 @@ import io.github.sonic_liberation.spotify_gql_client.gql.BrowseSectionItem
 import io.github.sonic_liberation.spotify_gql_client.gql.HomeGenericSectionData
 import io.github.sonic_liberation.spotify_gql_client.gql.HomeRecentlyPlayedSectionData
 import io.github.sonic_liberation.spotify_gql_client.gql.HomeSectionItem
+import io.github.sonic_liberation.spotify_gql_client.gql.HomeShortsSectionData
 import io.github.sonic_liberation.spotify_gql_client.gql.PlaylistResponseWrapper
 import io.github.sonic_liberation.spotify_gql_client.gql.ResponseWrapper
 import io.github.sonic_liberation.spotify_gql_client.gql.SpotifyGQLClient
@@ -52,6 +53,21 @@ class RealMetadataBrowseAPI(val spotifyGQLClient: SpotifyGQLClient) : MetadataBr
 
     companion object {
         private val HTML_REGEX = Regex("<[^>]*>")
+
+        // BeatViz additions. Genre ids starting with HOME_GENRE are Home feed filters:
+        // "home-genre" is "All", "home-genre:<chip id>" a web-player chip (Music,
+        // Podcasts, ...). Other genre ids are browse categories (spotify:page:...).
+        const val HOME_GENRE = "home-genre"
+        private const val HOME_FACET_PREFIX = "$HOME_GENRE:"
+
+        /** Description marking the untitled shortcuts section at the top of Home. */
+        const val SHORTCUTS_MARKER = "beatviz:shortcuts"
+    }
+
+    private fun facetOf(genreId: String): String? = when {
+        genreId == HOME_GENRE -> ""
+        genreId.startsWith(HOME_FACET_PREFIX) -> genreId.removePrefix(HOME_FACET_PREFIX)
+        else -> null
     }
 
     /// Descriptions can contain HTML tags, which we want to remove.
@@ -70,10 +86,18 @@ class RealMetadataBrowseAPI(val spotifyGQLClient: SpotifyGQLClient) : MetadataBr
     override suspend fun genres(): List<MetadataBrowseGenre> {
         val genres = mutableListOf(
             MetadataBrowseGenre(
-                "home-genre",
+                HOME_GENRE,
                 "All"
             )
         )
+        // BeatViz: the web player's Home chips come first, then browse categories.
+        runCatching {
+            spotifyGQLClient.browse.home(spT = spToken, sectionItemsLimit = 1)
+                ?.data?.home?.homeChips.orEmpty()
+        }.getOrDefault(emptyList()).forEach { chip ->
+            val name = chip.label?.transformedLabel ?: chip.label?.translatedBaseText ?: return@forEach
+            genres.add(MetadataBrowseGenre(id = "$HOME_FACET_PREFIX${chip.id}", name = name))
+        }
         val genresResponse = spotifyGQLClient.browse.browseAll(
             pageOffset = 0,
             pageLimit = 10,
@@ -98,8 +122,8 @@ class RealMetadataBrowseAPI(val spotifyGQLClient: SpotifyGQLClient) : MetadataBr
         genreId: String,
         pagination: PaginationStrategy?
     ): PaginationResult<MetadataBrowseSection> {
-        if (genreId == "home-genre") {
-            return homeFeed(pagination)
+        facetOf(genreId)?.let { facet ->
+            return homeFeed(pagination, facet)
         }
 
         val paging = pagination.getOffsetOrDefault()
@@ -135,7 +159,7 @@ class RealMetadataBrowseAPI(val spotifyGQLClient: SpotifyGQLClient) : MetadataBr
         sectionId: String,
         pagination: PaginationStrategy?
     ): PaginationResult<MetadataBrowseItem> {
-        if (genreId == "home-genre") {
+        if (facetOf(genreId) != null) {
             return homeFeedSection(genreId, sectionId, pagination)
         }
 
@@ -162,10 +186,14 @@ class RealMetadataBrowseAPI(val spotifyGQLClient: SpotifyGQLClient) : MetadataBr
         )
     }
 
-    private suspend fun homeFeed(pagination: PaginationStrategy?): PaginationResult<MetadataBrowseSection> {
+    private suspend fun homeFeed(
+        pagination: PaginationStrategy?,
+        facet: String = "",
+    ): PaginationResult<MetadataBrowseSection> {
         val paging = pagination.getOffsetOrDefault()
         val response = spotifyGQLClient.browse.home(
             spT = spToken,
+            facet = facet,
             sectionItemsLimit = paging.limit,
         ) ?: return PaginationResult(emptyList(), 0, null)
 
@@ -175,7 +203,8 @@ class RealMetadataBrowseAPI(val spotifyGQLClient: SpotifyGQLClient) : MetadataBr
             0,
             null
         )
-        val items = sections.mapNotNull { it.toBrowseSection() }
+        val greeting = home.greeting?.transformedLabel ?: home.greeting?.translatedBaseText
+        val items = sections.mapNotNull { it.toBrowseSection(greeting) }
 
         return PaginationResult(
             items = items,
@@ -214,7 +243,18 @@ class RealMetadataBrowseAPI(val spotifyGQLClient: SpotifyGQLClient) : MetadataBr
         )
     }
 
-    private fun HomeSectionItem.toBrowseSection(): MetadataBrowseSection? {
+    private fun HomeSectionItem.toBrowseSection(greeting: String? = null): MetadataBrowseSection? {
+        // BeatViz: the untitled shortcuts grid the web player shows under the chips.
+        if (data is HomeShortsSectionData) {
+            val shortcuts = sectionItems?.items?.mapNotNull { it.content?.toBrowseItem() }.orEmpty()
+            if (shortcuts.isEmpty()) return null
+            return MetadataBrowseSection(
+                title = greeting ?: "Shortcuts",
+                description = SHORTCUTS_MARKER,
+                items = shortcuts,
+                moreLink = null,
+            )
+        }
         val titleText = when (data) {
             is HomeGenericSectionData -> (data as HomeGenericSectionData).title?.transformedLabel
                 ?: return null

@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,6 +60,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.search.MetadataSupportedSearchType
 import dev.krtirtho.spotube.core.audioplayer.AudioPlayerQueue
 import dev.krtirtho.spotube.core.audioplayer.QueueEntry
+import dev.krtirtho.spotube.modules.home.HomeScreenState
+import dev.krtirtho.spotube.modules.home.HomeScreenViewModel
 import dev.krtirtho.spotube.modules.search.SearchScreenViewModel
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -77,9 +80,13 @@ private fun MetadataSupportedSearchType.label() = when (this) {
 fun TvSearchScreen(
     navigator: TvNavigator,
     viewModel: SearchScreenViewModel = koinViewModel(),
+    homeViewModel: HomeScreenViewModel = koinViewModel(),
     audioPlayerQueue: AudioPlayerQueue = koinInject(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val homeState by homeViewModel.uiState.collectAsStateWithLifecycle()
+    // Spotify's browse categories (the web player's "Browse all" on Search).
+    val categories = (homeState as? HomeScreenState.Data)?.genres.orEmpty().filterNot { isHomeFilter(it.id) }
     val currentEntry by audioPlayerQueue.currentQueueEntryFlow.collectAsStateWithLifecycle()
     val currentTrackId = (currentEntry as? QueueEntry.StreamingTrack)?.track?.id
     val scope = rememberCoroutineScope()
@@ -120,6 +127,28 @@ fun TvSearchScreen(
                     ) {
                         items(state.recentSearches) { recent ->
                             TvChip(text = recent, selected = false, onClick = { viewModel.applyRecentSearch(recent) })
+                        }
+                    }
+                }
+            }
+            if (categories.isNotEmpty()) {
+                item(key = "browse-title") {
+                    TvSectionTitle(title = "Browse all", modifier = Modifier.padding(horizontal = TvDimens.ContentPadding))
+                }
+                categories.chunked(4).forEachIndexed { rowIndex, row ->
+                    item(key = "browse-row-$rowIndex") {
+                        Row(
+                            modifier = Modifier.padding(horizontal = TvDimens.ContentPadding),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            row.forEach { genre ->
+                                TvCategoryTile(
+                                    name = genre.name,
+                                    modifier = Modifier.weight(1f),
+                                    onClick = { navigator.navigate(TvRoute.Genre(genre.id, genre.name)) },
+                                )
+                            }
+                            repeat(4 - row.size) { Box(Modifier.weight(1f)) }
                         }
                     }
                 }
@@ -202,6 +231,20 @@ fun TvSearchScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun TvCategoryTile(name: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(
+        modifier = modifier
+            .height(96.dp)
+            .clip(TvCardShape)
+            .background(rememberCategoryColor(name), TvCardShape)
+            .tvFocusable(focusedScale = 1.04f, focusKey = "category/$name", onClick = onClick)
+            .padding(14.dp),
+    ) {
+        Text(name, color = TvColors.TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 2)
     }
 }
 

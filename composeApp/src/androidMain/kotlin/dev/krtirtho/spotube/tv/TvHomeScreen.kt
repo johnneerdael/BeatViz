@@ -42,18 +42,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseItem
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
 import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.track.MetadataTrack
 import dev.krtirtho.spotube.core.audioplayer.AudioPlayerQueue
 import dev.krtirtho.spotube.core.audioplayer.QueueEntry
@@ -61,12 +59,15 @@ import dev.krtirtho.spotube.modules.home.HomeScreenRepository
 import dev.krtirtho.spotube.modules.home.HomeScreenState
 import dev.krtirtho.spotube.modules.home.HomeScreenViewModel
 import dev.krtirtho.spotube.modules.plugin.PluginManager
+import io.github.sonic_liberation.spotube_plugin_spotify.core.RealMetadataBrowseAPI
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
-private val RecentsTitle = Regex("recent|jump back in|recently played", RegexOption.IGNORE_CASE)
+/** Genre ids for the Home feed ("All" and the web player's chips); others are browse categories. */
+fun isHomeFilter(genreId: String) = genreId == RealMetadataBrowseAPI.HOME_GENRE ||
+    genreId.startsWith("${RealMetadataBrowseAPI.HOME_GENRE}:")
 
 /** Plays [tracks] starting at [index] (used for track cards and search results). */
 suspend fun AudioPlayerQueue.playTracks(tracks: List<MetadataTrack>, index: Int) {
@@ -92,21 +93,14 @@ fun TvHomeScreen(
 
     when {
         plugin == null -> {
-            TvMessage(
-                title = "Connect your Spotify account",
-                body = "Install the Spotify metadata plugin, then sign in to see your home feed.",
-                actionLabel = "Open plugins",
-                onAction = { navigator.navigate(TvRoute.Plugins) },
-            )
+            // Spotify is built in, so this only shows while plugins start up.
+            TvMessage(title = "Starting…")
             return
         }
         !loggedIn -> {
-            TvMessage(
-                title = "Sign in to Spotify",
-                body = "Your home feed, library and recommendations appear after you sign in.",
-                actionLabel = "Sign in",
-                onAction = { navigator.navigate(TvRoute.Plugins) },
-            )
+            TvSignIn(onSignIn = {
+                pluginManager.launchTask { plugin?.use { coreAPI.login() } }
+            })
             return
         }
     }
@@ -121,8 +115,11 @@ fun TvHomeScreen(
         )
         is HomeScreenState.Data -> {
             val genreId = current.selectedGenreId
-            val sections = genreId?.let { current.browseSections[it] }.orEmpty()
-            val recents = sections.firstOrNull { RecentsTitle.containsMatchIn(it.title) }
+            val allSections = genreId?.let { current.browseSections[it] }.orEmpty()
+            // The untitled shortcuts grid (marked by our plugin fork) renders as tiles, not a row.
+            val shortcuts = allSections.firstOrNull { it.description == RealMetadataBrowseAPI.SHORTCUTS_MARKER }
+            val sections = allSections.filter { it !== shortcuts }
+            val homeFilters = current.genres.filter { isHomeFilter(it.id) }
             val listState = rememberLazyListState()
             val nearEnd by remember {
                 derivedStateOf {
@@ -155,13 +152,13 @@ fun TvHomeScreen(
                 contentPadding = PaddingValues(top = 20.dp, bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(28.dp),
             ) {
-                if (current.genres.size > 1) {
+                if (homeFilters.size > 1) {
                     item(key = "genres") {
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = TvDimens.ContentPadding),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            items(current.genres, key = { it.id }) { genre ->
+                            items(homeFilters, key = { it.id }) { genre ->
                                 TvChip(
                                     text = genre.name,
                                     selected = genre.id == genreId,
@@ -172,10 +169,10 @@ fun TvHomeScreen(
                     }
                 }
 
-                if (recents != null) {
+                if (shortcuts != null) {
                     item(key = "shortcuts") {
-                        val tiles = recents.items.take(8).map { it.toTvItem() }
-                        val tracks = recents.items.tracks()
+                        val tiles = shortcuts.items.take(8).map { it.toTvItem() }
+                        val tracks = shortcuts.items.tracks()
                         Column(
                             modifier = Modifier.padding(horizontal = TvDimens.ContentPadding),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -186,6 +183,7 @@ fun TvHomeScreen(
                                         TvShortcutTile(
                                             item = tile,
                                             modifier = Modifier.weight(1f),
+                                            initialFocus = tile === tiles.first(),
                                             onClick = { open(tile, tracks, i) },
                                         )
                                     }
@@ -196,13 +194,15 @@ fun TvHomeScreen(
                     }
                 }
 
-                listItemsIndexed(sections, key = { index, section -> "section:$index:${section.title}" }) { _, section ->
+                listItemsIndexed(sections, key = { index, section -> "section:$index:${section.title}" }) { index, section ->
                     val cards = section.items.map { it.toTvItem() }
                     val tracks = section.items.tracks()
                     TvCardRow(
                         title = section.title,
                         description = section.description,
                         items = cards,
+                        rowKey = "home/$index/${section.title}",
+                        initialFocus = shortcuts == null && index == 0,
                         onShowAll = section.moreLink?.let { link ->
                             {
                                 if (genreId != null) {
@@ -231,7 +231,7 @@ fun TvHomeScreen(
 private fun List<MetadataBrowseItem>.tracks(): List<MetadataTrack> =
     filterIsInstance<MetadataBrowseItem.Track>().map { it.data }
 
-/** "Show all" for one home-feed section, as a grid. */
+/** "Show all" for one home-feed or category section, as a grid. */
 @Composable
 fun TvBrowseSectionScreen(
     route: TvRoute.BrowseSection,
@@ -239,26 +239,11 @@ fun TvBrowseSectionScreen(
     repository: HomeScreenRepository = koinInject(),
     audioPlayerQueue: AudioPlayerQueue = koinInject(),
 ) {
-    val items = remember(route) { mutableStateListOf<MetadataBrowseItem>() }
-    var next by remember(route) { mutableStateOf<PaginationStrategy?>(null) }
-    var isLoading by remember(route) { mutableStateOf(true) }
-    var error by remember(route) { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-
-    suspend fun load(pagination: PaginationStrategy?) {
-        isLoading = true
-        runCatching { repository.sublist(route.genreId, route.sectionId, pagination) }
-            .onSuccess { result ->
-                val newItems = result?.items.orEmpty()
-                items.addAll(newItems)
-                // Stop when a page adds nothing, some plugins keep returning a cursor.
-                next = if (newItems.isEmpty()) null else result?.nextPagination
-            }
-            .onFailure { error = it.message ?: "Unknown error" }
-        isLoading = false
+    val viewModel = viewModel(key = "browse:${route.genreId}:${route.sectionId}") {
+        TvBrowseSectionViewModel(route.genreId, route.sectionId, repository)
     }
-
-    LaunchedEffect(route) { load(null) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
 
     val gridState = rememberLazyGridState()
     val nearEnd by remember {
@@ -268,21 +253,21 @@ fun TvBrowseSectionScreen(
             info.totalItemsCount > 0 && last >= info.totalItemsCount - 6
         }
     }
-    LaunchedEffect(nearEnd, next, isLoading) {
-        if (nearEnd && next != null && !isLoading) load(next)
+    LaunchedEffect(nearEnd, state.hasMore) {
+        if (nearEnd) viewModel.loadMore()
     }
 
-    if (items.isEmpty()) {
+    if (state.items.isEmpty()) {
         when {
-            error != null -> TvMessage(title = "Couldn't load ${route.title}", body = error)
-            isLoading -> TvMessage(title = "Loading…")
+            state.error != null -> TvMessage(title = "Couldn't load ${route.title}", body = state.error)
+            state.isLoading -> TvMessage(title = "Loading…")
             else -> TvMessage(title = "Nothing here yet")
         }
         return
     }
 
-    val cards = items.map { it.toTvItem() }
-    val tracks = items.tracks()
+    val cards = state.items.map { it.toTvItem() }
+    val tracks = state.items.tracks()
     Column(modifier = Modifier.fillMaxSize()) {
         Text(
             text = route.title,
@@ -299,16 +284,109 @@ fun TvBrowseSectionScreen(
                 .fillMaxWidth()
                 .weight(1f),
         ) {
-            itemsIndexed(cards, key = { index, item -> "${item.key}#$index" }) { _, item ->
-                TvCard(item = item, onClick = {
+            itemsIndexed(cards, key = { index, item -> "${item.key}#$index" }) { index, item ->
+                TvCard(
+                    item = item,
+                    focusKey = "grid/${item.key}#$index",
+                    initialFocus = index == 0,
+                    onClick = {
+                        val itemRoute = item.route
+                        if (itemRoute != null) {
+                            navigator.navigate(itemRoute)
+                        } else if (item.track != null) {
+                            scope.launch { audioPlayerQueue.playTracks(tracks, tracks.indexOf(item.track).coerceAtLeast(0)) }
+                        }
+                    },
+                )
+            }
+        }
+    }
+}
+
+/** A Spotify browse category (from Search): its sections as rows, like the web player. */
+@Composable
+fun TvGenreScreen(
+    route: TvRoute.Genre,
+    navigator: TvNavigator,
+    repository: HomeScreenRepository = koinInject(),
+    audioPlayerQueue: AudioPlayerQueue = koinInject(),
+) {
+    val viewModel = viewModel(key = "genre:${route.id}") { TvGenreViewModel(route.id, repository) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    val headerColor = rememberCategoryColor(route.name)
+
+    val listState = rememberLazyListState()
+    val nearEnd by remember {
+        derivedStateOf {
+            val info = listState.layoutInfo
+            val last = info.visibleItemsInfo.lastOrNull()?.index ?: 0
+            info.totalItemsCount > 0 && last >= info.totalItemsCount - 2
+        }
+    }
+    LaunchedEffect(nearEnd, state.hasMore) {
+        if (nearEnd) viewModel.loadMore()
+    }
+
+    LazyColumn(
+        state = listState,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(0f to headerColor, 0.4f to TvColors.Panel)),
+        contentPadding = PaddingValues(top = 40.dp, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(28.dp),
+    ) {
+        item(key = "title") {
+            Text(
+                route.name,
+                color = TvColors.TextPrimary,
+                fontSize = TvType.PageTitle,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(horizontal = TvDimens.ContentPadding),
+            )
+        }
+        if (state.items.isEmpty()) {
+            item(key = "status") {
+                Text(
+                    when {
+                        state.error != null -> "Couldn't load ${route.name}: ${state.error}"
+                        state.isLoading -> "Loading…"
+                        else -> "Nothing here yet"
+                    },
+                    color = TvColors.TextSecondary,
+                    modifier = Modifier.padding(horizontal = TvDimens.ContentPadding),
+                )
+            }
+        }
+        listItemsIndexed(state.items, key = { index, section -> "genre-section:$index:${section.title}" }) { index, section ->
+            val tracks = section.items.tracks()
+            TvCardRow(
+                title = section.title,
+                description = section.description,
+                items = section.items.map { it.toTvItem() },
+                rowKey = "genre/$index/${section.title}",
+                initialFocus = index == 0,
+                onShowAll = section.moreLink?.let { link ->
+                    { navigator.navigate(TvRoute.BrowseSection(route.id, link, section.title)) }
+                },
+                onItemClick = { _, item ->
                     val itemRoute = item.route
                     if (itemRoute != null) {
                         navigator.navigate(itemRoute)
                     } else if (item.track != null) {
                         scope.launch { audioPlayerQueue.playTracks(tracks, tracks.indexOf(item.track).coerceAtLeast(0)) }
                     }
-                })
-            }
+                },
+            )
         }
     }
 }
+
+/** Stable, saturated colour per category name (the web player colours its category tiles too). */
+fun categoryColor(name: String): Color {
+    val hue = ((name.hashCode() % 360) + 360) % 360
+    return Color.hsl(hue.toFloat(), saturation = 0.55f, lightness = 0.38f)
+}
+
+@Composable
+fun rememberCategoryColor(name: String): Color = remember(name) { categoryColor(name) }

@@ -48,6 +48,7 @@ fun TvApp() {
     val userSettings by settingsRepository.userSettings.collectAsStateWithLifecycle(initialValue = UserSettings())
     val navigationCommands: NavigationCommands = koinInject()
     val navigator = remember { TvNavigator() }
+    val actions = remember { TvActionController() }
     var isWebViewOpen by remember { mutableStateOf(false) }
 
     // Upstream code (plugins, stock settings screens) navigates through
@@ -81,7 +82,10 @@ fun TvApp() {
                     .fillMaxSize()
                     .background(TvColors.Background)
             ) {
-                TvShell(navigator = navigator)
+                CompositionLocalProvider(LocalTvActions provides actions) {
+                    TvShell(navigator = navigator)
+                }
+                TvActionSheetHost(controller = actions, navigator = navigator)
 
                 if (navigator.isPlayerOpen) {
                     TvFullScreenPlayer(onClose = { navigator.isPlayerOpen = false })

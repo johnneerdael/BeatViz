@@ -186,12 +186,17 @@ fun TvLibraryPanel(
 
 @Composable
 private fun TvLibraryRow(item: TvItem, selected: Boolean, onClick: () -> Unit) {
+    val actions = LocalTvActions.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(TvCardShape)
             .background(if (selected) TvColors.Highlight else Color.Transparent, TvCardShape)
-            .tvFocusable(focusedBackground = TvColors.PanelRaised, onClick = onClick)
+            .tvFocusable(
+                focusedBackground = TvColors.PanelRaised,
+                onLongClick = { actions.show(item) },
+                onClick = onClick,
+            )
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

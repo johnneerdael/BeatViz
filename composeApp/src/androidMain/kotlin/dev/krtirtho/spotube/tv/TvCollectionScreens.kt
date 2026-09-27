@@ -272,7 +272,7 @@ private fun TvCollectionPage(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                TvPlayButton(isPlaying = isPlaying, onClick = {
+                TvPlayButton(isPlaying = isPlaying, initialFocus = true, onClick = {
                     when {
                         isPlaying -> scope.launch { audioPlayer.pause() }
                         isThisCollectionQueued -> scope.launch { audioPlayer.play() }
@@ -404,12 +404,18 @@ fun TvTrackRow(
     onClick: () -> Unit,
 ) {
     val titleColor = if (isCurrent) TvColors.Accent else TvColors.TextPrimary
+    val actions = LocalTvActions.current
     Row(
         modifier = Modifier
             .padding(horizontal = TvDimens.ContentPadding)
             .fillMaxWidth()
             .clip(TvCardShape)
-            .tvFocusable(focusedBackground = TvColors.Highlight, onClick = onClick)
+            .tvFocusable(
+                focusedBackground = TvColors.Highlight,
+                focusKey = "track/${track.id}#$index",
+                onLongClick = { actions.show(track.toTvItem()) },
+                onClick = onClick,
+            )
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

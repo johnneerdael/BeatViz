@@ -35,6 +35,8 @@ sealed interface TvRoute {
     data class Album(val id: String) : TvRoute
     data class Artist(val id: String) : TvRoute
     data class BrowseSection(val genreId: String, val sectionId: String, val title: String) : TvRoute
+    /** A Spotify browse category (Pop, Hip-Hop, ...), reached from Search. */
+    data class Genre(val id: String, val name: String) : TvRoute
 }
 
 @Stable
@@ -44,6 +46,11 @@ class TvNavigator {
     val current: TvRoute get() = stack.last()
     val canPop: Boolean get() = stack.size > 1
 
+    /** Identifies the visible screen for saved scroll/focus state. */
+    val currentScreenKey: String get() = "${stack.lastIndex}:${stack.last()}"
+
+    val focusMemory = TvFocusMemory().apply { onScreenShown(currentScreenKey) }
+
     /** Full-screen player shown on top of everything. */
     var isPlayerOpen by mutableStateOf(false)
 
@@ -51,16 +58,22 @@ class TvNavigator {
         if (route == current) return
         // Top-level destinations reset the stack, like the web player's Home button.
         if (route == TvRoute.Home) {
-            stack.clear()
-            stack.add(TvRoute.Home)
-            return
+            while (stack.size > 1) {
+                focusMemory.forget(currentScreenKey)
+                stack.removeAt(stack.lastIndex)
+            }
+        } else {
+            stack.add(route)
+            focusMemory.forget(currentScreenKey) // a new visit starts at its first element
         }
-        stack.add(route)
+        focusMemory.onScreenShown(currentScreenKey)
     }
 
     fun pop(): Boolean {
         if (!canPop) return false
+        focusMemory.forget(currentScreenKey)
         stack.removeAt(stack.lastIndex)
+        focusMemory.onScreenShown(currentScreenKey)
         return true
     }
 

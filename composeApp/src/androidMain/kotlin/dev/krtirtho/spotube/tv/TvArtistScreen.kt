@@ -139,7 +139,7 @@ fun TvArtistScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-                        TvPlayButton(isPlaying = isPlaying, onClick = {
+                        TvPlayButton(isPlaying = isPlaying, initialFocus = true, onClick = {
                             when {
                                 isPlaying -> scope.launch { audioPlayer.pause() }
                                 playingTopTracks -> scope.launch { audioPlayer.play() }
