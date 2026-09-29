@@ -90,6 +90,19 @@ class RealCoreAPI(
         val credentialsRaw = storage.getString("credentials") ?: return
         val credentials = json.decodeFromString<CredentialsFromCookieResult>(credentialsRaw)
         SpotifyGQLBaseClient.credentials = credentials
+
+        // The stored access token may already be expired (or about to expire) if the app
+        // was closed/backgrounded for a while. If we mark the session as logged in right away,
+        // outgoing requests can race the refresh and fail with 401. So refresh eagerly first.
+        val now = Clock.System.now().toEpochMilliseconds()
+        if (credentials.expiration - now <= REFRESH_MARGIN_MILLIS) {
+            try {
+                storeSession(credentialsFromCookie(credentials.cookies))
+            } catch (e: Throwable) {
+                console.log("[RealCoreAPI.restoreSession] Failed to refresh expired session: ${e.message}")
+            }
+        }
+
         loggedInStateFlow.value = true
     }
 
@@ -101,6 +114,10 @@ class RealCoreAPI(
     }
 
     private fun scheduleForRefresh() {
+        // Cancel any previously running refresh chain before starting a new one, otherwise
+        // multiple overlapping chains can pile up (e.g. one started from restoreSession/init
+        // and another from login()), each recursing on its own and hammering the token endpoint.
+        refreshJob?.cancel()
         refreshJob = scope.launch {
             val expiration = SpotifyGQLBaseClient.credentials?.expiration
             val cookies = SpotifyGQLBaseClient.credentials?.cookies
@@ -110,12 +127,25 @@ class RealCoreAPI(
                 return@launch
             }
 
+            // Some token responses (e.g. reason=transport) can come back with a lifetime shorter
+            // than REFRESH_MARGIN_MILLIS. Subtracting a fixed margin in that case would produce a
+            // delay of 0 forever, causing a tight refresh loop. Always enforce a sane minimum
+            // delay so we never re-request the token faster than MIN_REFRESH_DELAY_MILLIS.
+            val remainingMillis = expiration - Clock.System.now().toEpochMilliseconds()
             val delayMillis =
-                expiration.minus(Clock.System.now().toEpochMilliseconds()).coerceAtLeast(0)
+                (remainingMillis - REFRESH_MARGIN_MILLIS).coerceAtLeast(MIN_REFRESH_DELAY_MILLIS)
             console.log("[RealCoreAPI.scheduleForRefresh] Scheduling refresh in ${delayMillis}ms")
 
             delay(timeMillis = delayMillis)
-            storeSession(credentialsFromCookie(cookies))
+
+            try {
+                storeSession(credentialsFromCookie(cookies))
+            } catch (e: Throwable) {
+                // Don't let a transient failure kill the refresh chain; back off and retry later
+                // instead of recursing immediately, which would otherwise busy-loop on errors.
+                console.log("[RealCoreAPI.scheduleForRefresh] Failed to refresh session: ${e.message}")
+                delay(timeMillis = MIN_REFRESH_DELAY_MILLIS)
+            }
 
             scheduleForRefresh()
         }
@@ -239,6 +269,14 @@ class RealCoreAPI(
         private val exp = Regex(
             """^https://accounts\.spotify\.com/[^/]+/status($|\?.*)$"""
         )
+
+        // Refresh the access token a bit before it actually expires, so in-flight/queued
+        // requests don't race against expiration and fail with 401.
+        private const val REFRESH_MARGIN_MILLIS = 60_000L
+
+        // Floor for the refresh delay. Guards against tight refresh loops when a token's
+        // actual lifetime is shorter than REFRESH_MARGIN_MILLIS, or on repeated failures.
+        private const val MIN_REFRESH_DELAY_MILLIS = 30_000L
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
