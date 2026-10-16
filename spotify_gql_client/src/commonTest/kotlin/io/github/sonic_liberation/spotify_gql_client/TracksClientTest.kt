@@ -17,7 +17,7 @@
 
 package io.github.sonic_liberation.spotify_gql_client
 
-import dev.krtirtho.plugin_interfaces.host_apis.HttpResponse
+import org.spotube.plugin_interfaces.host_apis.HttpResponse
 import io.github.sonic_liberation.spotify_gql_client.gql.tracks.TracksClient
 import io.github.sonic_liberation.spotify_gql_client.loader.ResourceLoader
 import io.github.sonic_liberation.spotify_gql_client.mocks.MockHTTPClientAPI

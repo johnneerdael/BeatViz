@@ -17,8 +17,9 @@
 
 package io.github.sonic_liberation.spotify_gql_client.mocks
 
-import dev.krtirtho.plugin_interfaces.host_apis.HttpClientAPI
-import dev.krtirtho.plugin_interfaces.host_apis.HttpResponse
+import org.spotube.plugin_interfaces.host_apis.HttpClientAPI
+import org.spotube.plugin_interfaces.host_apis.HttpMethod
+import org.spotube.plugin_interfaces.host_apis.HttpResponse
 
 class MockHTTPClientAPI : HttpClientAPI {
     var mockGetResponse = HttpResponse(
@@ -64,42 +65,19 @@ class MockHTTPClientAPI : HttpClientAPI {
         body = """{"data": {"mock": "response"}}"""
     )
 
-
-    override suspend fun get(
-        url: String,
-        requestHeaders: Map<String, String>?
-    ): HttpResponse = mockGetResponse
-
-    override suspend fun post(
+    override suspend fun request(
+        method: HttpMethod,
         url: String,
         requestHeaders: Map<String, String>?,
-        body: String
-    ): HttpResponse = mockPostResponse
-
-    override suspend fun put(
-        url: String,
-        requestHeaders: Map<String, String>?,
-        body: String
-    ): HttpResponse = mockPutResponse
-
-    override suspend fun delete(
-        url: String,
-        requestHeaders: Map<String, String>?
-    ): HttpResponse = mockDeleteResponse
-
-    override suspend fun options(
-        url: String,
-        requestHeaders: Map<String, String>?
-    ): HttpResponse = mockOptionsResponse
-
-    override suspend fun head(
-        url: String,
-        requestHeaders: Map<String, String>?
-    ): HttpResponse = mockHeadResponse
-
-    override suspend fun patch(
-        url: String,
-        requestHeaders: Map<String, String>?,
-        body: String
-    ): HttpResponse = mockPatchResponse
+        body: String?
+    ): HttpResponse =
+        when (method) {
+            HttpMethod.Get -> mockGetResponse
+            HttpMethod.Post -> mockPostResponse
+            HttpMethod.Put -> mockPutResponse
+            HttpMethod.Delete -> mockDeleteResponse
+            HttpMethod.Options -> mockOptionsResponse
+            HttpMethod.Head -> mockHeadResponse
+            HttpMethod.Patch -> mockPatchResponse
+        }
 }

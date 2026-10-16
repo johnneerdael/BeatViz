@@ -17,8 +17,8 @@
 
 package io.github.sonic_liberation.spotify_gql_client.gql
 
-import dev.krtirtho.plugin_interfaces.host_apis.HttpClientAPI
-import dev.krtirtho.plugin_interfaces.host_apis.HttpMethod
+import org.spotube.plugin_interfaces.host_apis.HttpClientAPI
+import org.spotube.plugin_interfaces.host_apis.HttpMethod
 import io.github.sonic_liberation.spotify_gql_client.services.UserAgents
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor

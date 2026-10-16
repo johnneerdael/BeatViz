@@ -38,7 +38,7 @@ ktor = "3.4.3"
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
-spotube-plugin-interfaces = { module = "dev.krtirtho.spotube:plugin_interfaces", version.ref = "spotube-plugin-interfaces" }
+spotube-plugin-interfaces = { module = "org.spotube.spotube:plugin_interfaces", version.ref = "spotube-plugin-interfaces" }
 zipline-core = { module = "app.cash.zipline:zipline", version.ref = "ziplineVersion" }
 semver = { module = "net.swiftzer.semver:semver", version.ref = "semver" }
 base32 = { module = "com.osmerion.kotlin:kotlin-base32", version.ref = "base32" }
@@ -55,7 +55,7 @@ ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-spotubeGradle = { id = "dev.krtirtho.spotube.gradle-plugin", version.ref = "spotube-gradle" }
+spotubeGradle = { id = "org.spotube.gradle-plugin", version.ref = "spotube-gradle" }
 zipline-gradle-plugin = { id = "app.cash.zipline", version.ref = "ziplineVersion" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 android-lint = { id = "com.android.lint", version.ref = "agp" }

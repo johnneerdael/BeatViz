@@ -19,17 +19,17 @@
 
 package io.github.sonic_liberation.spotube_plugin_spotify.core
 
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.album.MetadataAlbum
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.album.MetadataAlbumType
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtist
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtistAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtistOverview
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationResult
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.Thumbnail
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylist
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.track.MetadataTrack
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.user.MetadataUser
+import org.spotube.plugin_interfaces.plugin_apis.metadata.album.MetadataAlbum
+import org.spotube.plugin_interfaces.plugin_apis.metadata.album.MetadataAlbumType
+import org.spotube.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtist
+import org.spotube.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtistAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtistOverview
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.PaginationResult
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.Thumbnail
+import org.spotube.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylist
+import org.spotube.plugin_interfaces.plugin_apis.metadata.track.MetadataTrack
+import org.spotube.plugin_interfaces.plugin_apis.metadata.user.MetadataUser
 import io.github.sonic_liberation.spotify_gql_client.gql.Artist
 import io.github.sonic_liberation.spotify_gql_client.gql.ArtistResponseWrapper
 import io.github.sonic_liberation.spotify_gql_client.gql.ReleaseItem

@@ -19,19 +19,19 @@
 
 package io.github.sonic_liberation.spotube_plugin_spotify.core
 
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.album.MetadataAlbum
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.album.MetadataAlbumType
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtist
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseGenre
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseItem
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseSection
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationResult
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.Thumbnail
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylist
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.track.MetadataTrack
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.user.MetadataUser
+import org.spotube.plugin_interfaces.plugin_apis.metadata.album.MetadataAlbum
+import org.spotube.plugin_interfaces.plugin_apis.metadata.album.MetadataAlbumType
+import org.spotube.plugin_interfaces.plugin_apis.metadata.artist.MetadataArtist
+import org.spotube.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseAPI
+import org.spotube.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseGenre
+import org.spotube.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseItem
+import org.spotube.plugin_interfaces.plugin_apis.metadata.browse.MetadataBrowseSection
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.PaginationResult
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.Thumbnail
+import org.spotube.plugin_interfaces.plugin_apis.metadata.playlist.MetadataPlaylist
+import org.spotube.plugin_interfaces.plugin_apis.metadata.track.MetadataTrack
+import org.spotube.plugin_interfaces.plugin_apis.metadata.user.MetadataUser
 import io.github.sonic_liberation.spotify_gql_client.gql.AlbumResponseWrapper
 import io.github.sonic_liberation.spotify_gql_client.gql.ArtistResponseWrapper
 import io.github.sonic_liberation.spotify_gql_client.gql.BrowseGenericSectionData

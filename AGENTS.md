@@ -18,7 +18,7 @@
 - **Kotlin Multiplatform** — JS-only target (`browser()`), compiled to Zipline plugin
 - **Single module**: `spotube_plugin_spotify`
 - **Main entrypoint**: `spotube_plugin_spotify/src/jsMain/kotlin/io/github/sonic_liberation/spotube_plugin_spotify/js.kt` — binds `CoreAPI` and metadata APIs to Zipline
-- **Service names** follow `*_SERVICE_NAME` constants from `dev.krtirtho.spotube:plugin_interfaces`
+- **Service names** follow `*_SERVICE_NAME` constants from `org.spotube.spotube:plugin_interfaces`
 - **Configuration cache enabled** by default (`org.gradle.configuration-cache=true` in `gradle.properties`); some tasks (e.g. publish) require `--no-configuration-cache`
 
 ## License & Pre-commit
@@ -34,6 +34,6 @@
 
 ## Dependencies
 
-- `dev.krtirtho.spotube:plugin_interfaces` — plugin host API interfaces
+- `org.spotube.spotube:plugin_interfaces` — plugin host API interfaces
 - `app.cash.zipline:zipline` — Kotlin/JS plugin runtime
 - `dev.whyoleg.cryptography` — cryptographic operations (TOTP)

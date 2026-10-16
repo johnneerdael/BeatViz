@@ -17,7 +17,7 @@
 
 package io.github.sonic_liberation.spotube_plugin_spotify.core
 
-import dev.krtirtho.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
+import org.spotube.plugin_interfaces.plugin_apis.metadata.common.PaginationStrategy
 import kotlinx.serialization.Serializable
 
 @Serializable
