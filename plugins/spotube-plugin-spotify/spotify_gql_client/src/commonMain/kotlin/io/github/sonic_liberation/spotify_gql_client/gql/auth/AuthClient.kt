@@ -17,7 +17,7 @@
 
 package io.github.sonic_liberation.spotify_gql_client.gql.auth
 
-import dev.krtirtho.plugin_interfaces.host_apis.HttpClientAPI
+import org.spotube.plugin_interfaces.host_apis.HttpClientAPI
 import io.github.sonic_liberation.spotify_gql_client.gql.SpotifyGQLBaseClient
 
 class AuthClient(client: HttpClientAPI) : SpotifyGQLBaseClient(client) {

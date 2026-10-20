@@ -17,8 +17,8 @@
 
 package io.github.sonic_liberation.spotify_gql_client.gql
 
-import dev.krtirtho.plugin_interfaces.host_apis.HttpClientAPI
-import dev.krtirtho.plugin_interfaces.host_apis.SystemInformationAPI
+import org.spotube.plugin_interfaces.host_apis.HttpClientAPI
+import org.spotube.plugin_interfaces.host_apis.SystemInformationAPI
 import io.github.sonic_liberation.spotify_gql_client.gql.album.AlbumClient
 import io.github.sonic_liberation.spotify_gql_client.gql.artist.ArtistClient
 import io.github.sonic_liberation.spotify_gql_client.gql.browse.BrowseClient

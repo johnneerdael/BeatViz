@@ -18,10 +18,10 @@
 package io.github.sonic_liberation.spotube_plugin_spotify.services
 
 import com.osmerion.kotlin.io.encoding.Base32
-import dev.krtirtho.plugin_interfaces.host_apis.CryptoAPI
-import dev.krtirtho.plugin_interfaces.host_apis.HashAlgorithms
-import dev.krtirtho.plugin_interfaces.host_apis.HMACEncodingFormats
-import dev.krtirtho.plugin_interfaces.host_apis.MACSignatureAlgorithms
+import org.spotube.plugin_interfaces.host_apis.CryptoAPI
+import org.spotube.plugin_interfaces.host_apis.HashAlgorithms
+import org.spotube.plugin_interfaces.host_apis.HMACEncodingFormats
+import org.spotube.plugin_interfaces.host_apis.MACSignatureAlgorithms
 import kotlin.time.Clock
 
 

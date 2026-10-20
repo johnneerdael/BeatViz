@@ -17,7 +17,7 @@
 
 package io.github.sonic_liberation.spotify_gql_client.gql.playlist
 
-import dev.krtirtho.plugin_interfaces.host_apis.HttpClientAPI
+import org.spotube.plugin_interfaces.host_apis.HttpClientAPI
 import io.github.sonic_liberation.spotify_gql_client.gql.GQLRequestExtensions
 import io.github.sonic_liberation.spotify_gql_client.gql.PersistedQuery
 import io.github.sonic_liberation.spotify_gql_client.gql.SpotifyGQLBaseClient

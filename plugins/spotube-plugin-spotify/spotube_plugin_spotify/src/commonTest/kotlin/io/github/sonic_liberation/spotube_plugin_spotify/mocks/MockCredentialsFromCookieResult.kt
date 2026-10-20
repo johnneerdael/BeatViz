@@ -17,7 +17,7 @@
 
 package io.github.sonic_liberation.spotube_plugin_spotify.mocks
 
-import dev.krtirtho.plugin_interfaces.host_apis.Cookie
+import org.spotube.plugin_interfaces.host_apis.Cookie
 import io.github.sonic_liberation.spotify_gql_client.gql.CredentialsFromCookieResult
 import io.github.sonic_liberation.spotify_gql_client.gql.SpotifyGQLBaseClient
 import io.github.sonic_liberation.spotube_plugin_spotify.BuildKonfig

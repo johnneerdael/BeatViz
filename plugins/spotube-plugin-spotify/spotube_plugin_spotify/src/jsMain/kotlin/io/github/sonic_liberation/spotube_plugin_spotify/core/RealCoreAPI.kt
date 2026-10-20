@@ -19,14 +19,14 @@
 
 package io.github.sonic_liberation.spotube_plugin_spotify.core
 
-import dev.krtirtho.plugin_interfaces.extras.spotor.JsonContentSerializer
-import dev.krtirtho.plugin_interfaces.extras.spotor.SpotrClient
-import dev.krtirtho.plugin_interfaces.host_apis.Cookie
-import dev.krtirtho.plugin_interfaces.host_apis.HttpClientAPI
-import dev.krtirtho.plugin_interfaces.host_apis.PersistedStorageAPI
-import dev.krtirtho.plugin_interfaces.host_apis.WebViewAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.core.CoreAPI
-import dev.krtirtho.plugin_interfaces.plugin_apis.core.PluginUpdateInfo
+import org.spotube.plugin_interfaces.extras.spotor.JsonContentSerializer
+import org.spotube.plugin_interfaces.extras.spotor.SpotrClient
+import org.spotube.plugin_interfaces.host_apis.Cookie
+import org.spotube.plugin_interfaces.host_apis.HttpClientAPI
+import org.spotube.plugin_interfaces.host_apis.PersistedStorageAPI
+import org.spotube.plugin_interfaces.host_apis.WebViewAPI
+import org.spotube.plugin_interfaces.plugin_apis.core.CoreAPI
+import org.spotube.plugin_interfaces.plugin_apis.core.PluginUpdateInfo
 import io.github.sonic_liberation.spotify_gql_client.gql.CredentialsFromCookieResult
 import io.github.sonic_liberation.spotify_gql_client.gql.SpotifyGQLBaseClient
 import io.github.sonic_liberation.spotube_plugin_spotify.services.TOTP
